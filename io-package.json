@@ -74,6 +74,14 @@
                 "role": "state"
             },
             "native": {}
+        },
+        {
+            "_id": "persons",
+            "type": "folder",
+            "common": {
+                "name": "Persons"
+            },
+            "native": {}
         }
     ]
 }

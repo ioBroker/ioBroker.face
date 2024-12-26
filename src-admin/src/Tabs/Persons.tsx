@@ -16,13 +16,16 @@ import {
     Fab,
 } from '@mui/material';
 
-import { Check, Close, Delete, Person, Add } from '@mui/icons-material';
+import { Check, Close, Delete, Person, Add, Edit, QuestionMark } from '@mui/icons-material';
 
-import { type AdminConnection, I18n } from '@iobroker/adapter-react-v5';
+import { type AdminConnection, I18n, type ThemeType } from '@iobroker/adapter-react-v5';
 
-import type { FaceAdapterConfig } from '../types';
+import type { FaceAdapterConfig, PERSON_ID, TOKEN } from '../types';
 import { Camera } from '../components/Camera';
 import { Comm } from '../components/Comm';
+
+const MAX_NAME_LENGTH = 48;
+const MAX_ID_LENGTH = 16;
 
 function validateToken(token: string): boolean {
     const payloadBase64 = token.split('.')[1];
@@ -77,17 +80,22 @@ interface PersonsProps {
     onChange: (attr: string, value: boolean | string) => void;
     showToast: (text: string) => void;
     onLoad: (native: Record<string, any>) => void;
+    themeType: ThemeType;
 }
 
 interface PersonsState {
     showConfirmDialog: null | number;
-    accessToken: string;
-    refreshToken: string;
+    accessToken: TOKEN;
+    refreshToken: TOKEN;
     showEnrollDialog: null | number;
-    persons: { name: string; id: string; advancedId?: number }[];
+    showVerifyDialog: null | number;
+    persons: { name: string; id: string; advanced?: boolean; iobroker?: boolean }[];
     images: string[];
     showEditDialog: null | number;
     editItem: { name: string; id: string } | null;
+    processing: boolean;
+    verifyResult: false | PERSON_ID | null;
+    verifyAllPersons: boolean;
 }
 
 class Persons extends Component<PersonsProps, PersonsState> {
@@ -102,7 +110,52 @@ class Persons extends Component<PersonsProps, PersonsState> {
             images: [],
             editItem: null,
             showEditDialog: null,
+            showVerifyDialog: null,
+            processing: false,
+            verifyResult: null,
+            verifyAllPersons: false,
         };
+    }
+
+    renderResultsDialog() {
+        if (this.state.verifyResult === null || this.state.showVerifyDialog === null) {
+            return null;
+        }
+        return (
+            <Dialog
+                open={!0}
+                onClose={() => this.setState({ verifyResult: null })}
+                maxWidth="lg"
+                fullWidth
+            >
+                <DialogTitle>{I18n.t('The result is')}</DialogTitle>
+                <DialogContent
+                    style={{
+                        color: this.state.verifyResult
+                            ? this.props.themeType === 'dark'
+                                ? '#7eff7e'
+                                : '#009e00'
+                            : this.props.themeType === 'dark'
+                              ? '#ff7474'
+                              : '#880000',
+                    }}
+                >
+                    {this.state.verifyResult === false
+                        ? I18n.t('Person is NOT %s', this.state.persons[this.state.showVerifyDialog].id)
+                        : I18n.t('Detected person is "%s"', this.state.verifyResult)}
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        color="grey"
+                        onClick={() => this.setState({ verifyResult: null })}
+                        startIcon={<Close />}
+                    >
+                        {I18n.t('Close')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
     }
 
     renderEnrollDialog(): React.JSX.Element | null {
@@ -119,10 +172,11 @@ class Persons extends Component<PersonsProps, PersonsState> {
             >
                 <DialogTitle>
                     {I18n.t('Enroll person')}
-                    <span style={{ fontWeight: 'bold' }}>
-                        {this.state.persons[this.state.showEnrollDialog]
-                            ? this.state.persons[this.state.showEnrollDialog].id
-                            : this.state.editItem.id}
+                    <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
+                        {this.state.persons[this.state.showEnrollDialog].id}
+                        {this.state.persons[this.state.showEnrollDialog].name
+                            ? ` (${this.state.persons[this.state.showEnrollDialog].name})`
+                            : ''}
                     </span>
                 </DialogTitle>
                 <DialogContent>
@@ -130,28 +184,41 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         id="camera"
                         width={480}
                         height={640}
+                        disabled={this.state.processing}
+                        onImagesUpdate={(images: string[]): void => {
+                            this.setState({ images });
+                        }}
                     />
                 </DialogContent>
                 <DialogActions>
                     <Button
                         variant="contained"
                         color="primary"
+                        disabled={!this.state.images.length || this.state.processing}
                         onClick={async () => {
-                            try {
-                                const advancedId = await Comm.enroll(
-                                    this.state.accessToken,
-                                    this.props.native.engine || 'iobroker',
-                                    this.state.persons[this.state.showEnrollDialog as number].id,
-                                    this.state.images,
-                                );
-                                if (advancedId) {
-                                    const persons = [...this.state.persons];
-                                    persons[this.state.showEnrollDialog as number].advancedId = advancedId;
-                                    this.setState({ persons });
+                            if (await this.validateTokens()) {
+                                await this.setStateAsync({ processing: true });
+                                try {
+                                    const isEnrolled = await Comm.enroll(
+                                        this.state.accessToken,
+                                        this.props.native.engine || 'iobroker',
+                                        this.state.persons[this.state.showEnrollDialog as number].id,
+                                        this.state.images,
+                                    );
+                                    if (isEnrolled) {
+                                        const persons = [...this.state.persons];
+                                        persons[this.state.showEnrollDialog as number][
+                                            this.props.native.engine || 'iobroker'
+                                        ] = true;
+                                        this.setState({ persons });
+                                    }
+                                    this.setState({ showEnrollDialog: null, processing: false });
+                                } catch (e) {
+                                    this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
+                                    this.setState({ processing: false });
                                 }
-                                this.setState({ showEnrollDialog: null });
-                            } catch (e) {
-                                this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
+                            } else {
+                                this.props.showToast(`${I18n.t('Cannot get access token')}`);
                             }
                         }}
                         startIcon={<Add />}
@@ -160,6 +227,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                     </Button>
                     <Button
                         variant="contained"
+                        disabled={this.state.processing}
                         color="grey"
                         onClick={() => this.setState({ showEnrollDialog: null })}
                         startIcon={<Close />}
@@ -171,6 +239,125 @@ class Persons extends Component<PersonsProps, PersonsState> {
         );
     }
 
+    renderVerifyDialog(): React.JSX.Element | null {
+        if (this.state.showVerifyDialog === null) {
+            return null;
+        }
+
+        return (
+            <Dialog
+                open={!0}
+                onClose={() => this.setState({ showVerifyDialog: null })}
+                maxWidth="lg"
+                fullWidth
+            >
+                <DialogTitle>
+                    {I18n.t('Verify person')}
+                    <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
+                        {this.state.persons[this.state.showVerifyDialog].id}
+                        {this.state.persons[this.state.showVerifyDialog].name
+                            ? ` (${this.state.persons[this.state.showVerifyDialog].name})`
+                            : ''}
+                    </span>
+                </DialogTitle>
+                <DialogContent>
+                    <Camera
+                        id="camera"
+                        width={480}
+                        height={640}
+                        disabled={this.state.processing}
+                        verifyAllPersons={this.state.verifyAllPersons}
+                        onVerifyAllPersonsChanged={
+                            this.state.persons.length > 1
+                                ? verifyAllPersons => this.setState({ verifyAllPersons })
+                                : undefined
+                        }
+                        onImagesUpdate={(images: string[]): void => this.setState({ images })}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        disabled={!this.state.images.length || this.state.processing}
+                        onClick={async () => {
+                            if (await this.validateTokens()) {
+                                await this.setStateAsync({ processing: true });
+                                try {
+                                    const result = await Comm.verify(
+                                        this.state.accessToken,
+                                        this.props.native.engine || 'iobroker',
+                                        this.state.images,
+                                        this.state.verifyAllPersons
+                                            ? undefined
+                                            : this.state.persons[this.state.showVerifyDialog as number].id,
+                                    );
+                                    if (
+                                        result.person === this.state.persons[this.state.showVerifyDialog as number].id
+                                    ) {
+                                        this.setState({ verifyResult: result.person });
+                                    } else {
+                                        this.setState({ verifyResult: false });
+                                    }
+                                } catch (e) {
+                                    this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
+                                }
+                                this.setState({ processing: false });
+                            } else {
+                                this.props.showToast(`${I18n.t('Cannot get access token')}`);
+                            }
+                        }}
+                        startIcon={<QuestionMark />}
+                    >
+                        {I18n.t('Verify')}
+                    </Button>
+                    <Button
+                        variant="contained"
+                        disabled={this.state.processing}
+                        color="grey"
+                        onClick={() => this.setState({ showVerifyDialog: null })}
+                        startIcon={<Close />}
+                    >
+                        {I18n.t('Close')}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    }
+
+    async onEditApply(): Promise<void> {
+        if (await this.validateTokens()) {
+            let count = 0;
+            try {
+                if (this.state.persons[this.state.showEditDialog as number]) {
+                    count = await Comm.edit(
+                        this.state.accessToken,
+                        this.state.persons[this.state.showEditDialog as number].id,
+                        this.state.editItem!,
+                    );
+                    if (count !== this.state.persons.length) {
+                        await this.readPersons();
+                        return;
+                    }
+                } else {
+                    count = await Comm.add(this.state.accessToken, this.state.editItem!.id, this.state.editItem!);
+                    if (count === this.state.persons.length) {
+                        await this.readPersons();
+                        return;
+                    }
+                }
+
+                const persons = [...this.state.persons];
+                persons[this.state.showEditDialog as number] = this.state.editItem!;
+                this.setState({ persons, showEditDialog: null }, () => this.sendSync());
+            } catch (e) {
+                this.props.showToast(`${I18n.t('Cannot edit')}: ${e.toString()}`);
+            }
+        } else {
+            this.props.showToast(`${I18n.t('Cannot get access token')}`);
+        }
+    }
+
     renderEditDialog(): React.JSX.Element | null {
         if (this.state.showEditDialog === null) {
             return null;
@@ -179,8 +366,8 @@ class Persons extends Component<PersonsProps, PersonsState> {
         let idError = '';
         if (!this.state.editItem!.id) {
             idError = I18n.t('Empty ID is not allowed');
-        } else if (this.state.editItem!.id.length > 16) {
-            idError = I18n.t('ID is too long. Max 16 characters');
+        } else if (this.state.editItem!.id.length > MAX_ID_LENGTH) {
+            idError = I18n.t('ID is too long. Max %s characters', MAX_ID_LENGTH);
         } else if (this.state.editItem!.id.match(/[^a-z0-9]+/)) {
             idError = I18n.t('Only lowercase a-z and digits are allowed');
         } else {
@@ -195,6 +382,11 @@ class Persons extends Component<PersonsProps, PersonsState> {
             }
         }
 
+        const changed =
+            !this.state.persons[this.state.showEditDialog] ||
+            this.state.persons[this.state.showEditDialog].id !== this.state.editItem!.id ||
+            this.state.persons[this.state.showEditDialog].name !== this.state.editItem!.name;
+
         return (
             <Dialog
                 open={!0}
@@ -204,31 +396,51 @@ class Persons extends Component<PersonsProps, PersonsState> {
             >
                 <DialogTitle>
                     {I18n.t('Edit person')}
-                    <span style={{ fontWeight: 'bold' }}>{this.state.persons[this.state.showEditDialog].id}</span>
+                    <span style={{ fontWeight: 'bold' }}>
+                        {this.state.persons[this.state.showEditDialog]
+                            ? this.state.persons[this.state.showEditDialog].id
+                            : this.state.editItem!.id}
+                    </span>
                 </DialogTitle>
                 <DialogContent>
                     <TextField
                         fullWidth
                         variant="standard"
                         label={I18n.t('ID')}
-                        helperText={idError || I18n.t('Only a-z and 0-9 are allowed. Max 16 characters')}
+                        helperText={idError || I18n.t('Only a-z and 0-9 are allowed. Max %s characters', MAX_ID_LENGTH)}
                         error={!!idError}
                         value={this.state.editItem!.id}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                                document.getElementById('name')?.focus();
+                            }
+                        }}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                             const editItem: { id: string; name: string } = {
                                 ...(this.state.editItem || { id: '', name: '' }),
                             };
-                            editItem.id = e.target.value;
+                            editItem.id = e.target.value.toLowerCase();
                             this.setState({ editItem });
                         }}
                     />
                     <TextField
+                        id="name"
                         fullWidth
                         variant="standard"
                         label={I18n.t('Name')}
-                        helperText={I18n.t('Max 48 characters')}
-                        error={this.state.editItem!.name.length > 48}
+                        helperText={I18n.t('Max %s characters', MAX_NAME_LENGTH)}
+                        error={this.state.editItem!.name.length > MAX_NAME_LENGTH}
                         value={this.state.editItem!.name}
+                        onKeyDown={async e => {
+                            if (
+                                e.key === 'Enter' &&
+                                this.state.editItem!.name.length < MAX_NAME_LENGTH &&
+                                !idError &&
+                                changed
+                            ) {
+                                await this.onEditApply();
+                            }
+                        }}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                             const editItem: { id: string; name: string } = {
                                 ...(this.state.editItem || { id: '', name: '' }),
@@ -242,24 +454,11 @@ class Persons extends Component<PersonsProps, PersonsState> {
                     <Button
                         variant="contained"
                         color="primary"
-                        disabled={this.state.editItem!.name.length > 48 || !!idError}
-                        onClick={async () => {
-                            try {
-                                await Comm.edit(
-                                    this.state.accessToken,
-                                    this.state.persons[this.state.showEditDialog as number].id,
-                                    this.state.editItem!,
-                                );
-                                const persons = [...this.state.persons];
-                                persons[this.state.showEditDialog as number] = this.state.editItem!;
-                                this.setState({ persons, showEditDialog: null });
-                            } catch (e) {
-                                this.props.showToast(`${I18n.t('Cannot edit')}: ${e.toString()}`);
-                            }
-                        }}
-                        startIcon={<Check />}
+                        disabled={this.state.editItem!.name.length > MAX_NAME_LENGTH || !!idError || !changed}
+                        onClick={() => this.onEditApply()}
+                        startIcon={this.state.persons[this.state.showEditDialog] ? <Check /> : <Add />}
                     >
-                        {I18n.t('Enroll')}
+                        {this.state.persons[this.state.showEditDialog] ? I18n.t('Apply') : I18n.t('Add')}
                     </Button>
                     <Button
                         variant="contained"
@@ -272,6 +471,12 @@ class Persons extends Component<PersonsProps, PersonsState> {
                 </DialogActions>
             </Dialog>
         );
+    }
+
+    async sendSync(): Promise<void> {
+        if (this.props.alive) {
+            await this.props.socket.sendTo(`face.${this.props.instance}`, 'sync', null);
+        }
     }
 
     renderConfirmDialog(): React.JSX.Element | null {
@@ -287,27 +492,37 @@ class Persons extends Component<PersonsProps, PersonsState> {
             >
                 <DialogTitle>{I18n.t('Please confirm')}</DialogTitle>
                 <DialogContent>
-                    {I18n.t('Do you really want to delete "%s"', this.state.persons[this.state.showConfirmDialog])}
+                    {I18n.t(
+                        'Do you really want to delete "%s"%s?',
+                        this.state.persons[this.state.showConfirmDialog].id,
+                        this.state.persons[this.state.showConfirmDialog].name
+                            ? ` (${this.state.persons[this.state.showConfirmDialog].name})`
+                            : '',
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button
                         variant="contained"
                         color="grey"
                         onClick={async () => {
-                            try {
-                                const length = await Comm.deletePerson(
-                                    this.state.accessToken,
-                                    this.state.persons[this.state.showConfirmDialog as number].id,
-                                );
-                                if (length !== this.state.persons.length - 1) {
-                                    await this.readPersons();
-                                } else {
-                                    const persons = [...this.state.persons];
-                                    persons.splice(this.state.showConfirmDialog as number, 1);
-                                    this.setState({ persons });
+                            if (await this.validateTokens()) {
+                                try {
+                                    const length = await Comm.deletePerson(
+                                        this.state.accessToken,
+                                        this.state.persons[this.state.showConfirmDialog as number].id,
+                                    );
+                                    if (length !== this.state.persons.length - 1) {
+                                        await this.readPersons();
+                                    } else {
+                                        const persons = [...this.state.persons];
+                                        persons.splice(this.state.showConfirmDialog as number, 1);
+                                        this.setState({ persons }, () => this.sendSync());
+                                    }
+                                } catch (e) {
+                                    this.props.showToast(`${I18n.t('Cannot delete')}: ${e.toString()}`);
                                 }
-                            } catch (e) {
-                                this.props.showToast(`${I18n.t('Cannot delete')}: ${e.toString()}`);
+                            } else {
+                                this.props.showToast(`${I18n.t('Cannot get access token')}`);
                             }
                         }}
                         startIcon={<Check />}
@@ -366,7 +581,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
         return new Promise(resolve => this.setState(newState as PersonsState, () => resolve()));
     }
 
-    async validateTokens(): Promise<void> {
+    async validateTokens(): Promise<boolean> {
         if (!this.state.accessToken) {
             const tokensVar = await this.props.socket.getState(`face.${this.props.instance}.info.tokens`);
             if (tokensVar?.val) {
@@ -374,9 +589,8 @@ class Persons extends Component<PersonsProps, PersonsState> {
                     const tokens: { access_token: string; refresh_token: string } = JSON.parse(tokensVar.val as string);
                     await this.setStateAsync({ accessToken: tokens.access_token, refreshToken: tokens.refresh_token });
                     if (this.state.accessToken) {
-                        await this.validateTokens();
+                        return await this.validateTokens();
                     }
-                    return;
                 } catch {
                     // ignore
                 }
@@ -384,7 +598,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
         }
 
         if (this.state.accessToken && validateToken(this.state.accessToken)) {
-            return;
+            return true;
         }
         if (this.state.refreshToken && validateToken(this.state.refreshToken)) {
             try {
@@ -401,7 +615,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         accessToken: tokens?.access_token || '',
                         refreshToken: tokens?.refresh_token || '',
                     });
-                    return;
+                    return true;
                 }
             } catch (e) {
                 this.props.showToast(`${I18n.t('Cannot authenticate')}: ${e.toString()}`);
@@ -429,6 +643,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
             this.props.showToast(`${I18n.t('Cannot authenticate')}: ${I18n.t('no login or password defined')}`);
             await this.setStateAsync({ accessToken: '', refreshToken: '' });
         }
+        return !!this.state.accessToken;
     }
 
     renderPerson(index: number): React.JSX.Element {
@@ -436,28 +651,57 @@ class Persons extends Component<PersonsProps, PersonsState> {
             <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell
-                    title={this.state.persons[index].advancedId ? I18n.t('Enrolled') : I18n.t('Must be enrolled')}
-                    style={{ color: this.state.persons[index].advancedId ? 'green' : undefined }}
+                    title={
+                        this.state.persons[index][this.props.native.engine || 'iobroker']
+                            ? I18n.t('Enrolled')
+                            : I18n.t('Must be enrolled')
+                    }
+                    style={{
+                        color: this.state.persons[index][this.props.native.engine || 'iobroker']
+                            ? this.props.themeType === 'dark'
+                                ? '#72ff72'
+                                : '#008500'
+                            : undefined,
+                    }}
                 >
                     {this.state.persons[index].id}
                 </TableCell>
                 <TableCell>{this.state.persons[index].name}</TableCell>
-                <TableCell>
+                <TableCell style={{ width: 34 * 4 }}>
+                    {this.state.persons[index][this.props.native.engine || 'iobroker'] ? (
+                        <IconButton
+                            size="small"
+                            title={I18n.t('Test')}
+                            disabled={!this.state.accessToken}
+                            onClick={() => this.setState({ showVerifyDialog: index, images: [] })}
+                        >
+                            <QuestionMark />
+                        </IconButton>
+                    ) : (
+                        <div style={{ width: 34, height: 34 }} />
+                    )}
                     <IconButton
+                        size="small"
+                        style={{ opacity: this.state.persons[index][this.props.native.engine] ? 0.5 : 1 }}
+                        title={I18n.t('Enroll person')}
                         disabled={!this.state.accessToken}
                         onClick={() => this.setState({ showEnrollDialog: index, images: [] })}
                     >
                         <Person />
                     </IconButton>
                     <IconButton
+                        size="small"
+                        title={I18n.t('Edit person')}
                         disabled={!this.state.accessToken}
                         onClick={() =>
                             this.setState({ showEditDialog: index, editItem: { ...this.state.persons[index] } })
                         }
                     >
-                        <Person />
+                        <Edit />
                     </IconButton>
                     <IconButton
+                        size="small"
+                        title={I18n.t('Delete person')}
                         disabled={!this.state.accessToken}
                         onClick={() => this.setState({ showConfirmDialog: index })}
                     >
@@ -474,6 +718,8 @@ class Persons extends Component<PersonsProps, PersonsState> {
                 {this.renderConfirmDialog()}
                 {this.renderEnrollDialog()}
                 {this.renderEditDialog()}
+                {this.renderVerifyDialog()}
+                {this.renderResultsDialog()}
                 <Table size="small">
                     <TableHead>
                         <TableRow>
@@ -496,7 +742,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                             <TableCell></TableCell>
                         </TableRow>
                     </TableHead>
-                    <TableBody>{this.state.persons.map((person, i) => this.renderPerson(i))}</TableBody>
+                    <TableBody>{this.state.persons.map((_person, i) => this.renderPerson(i))}</TableBody>
                 </Table>
             </div>
         );

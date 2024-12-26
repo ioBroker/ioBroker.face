@@ -167,6 +167,7 @@ class App extends GenericApp<GenericAppProps, AppState> {
                 native={this.state.native as FaceAdapterConfig}
                 instance={this.instance}
                 showToast={(text: string) => this.showToast(text)}
+                themeType={this.state.themeType}
             />
         );
     }
