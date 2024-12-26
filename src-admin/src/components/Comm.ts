@@ -24,7 +24,12 @@ export class Comm {
         return data.persons;
     }
 
-    static async enroll(accessToken: TOKEN, engine: string, personId: PERSON_ID, images: string[]): Promise<number> {
+    static async enroll(
+        accessToken: TOKEN,
+        engine: string,
+        images: string[],
+        personId: PERSON_ID,
+    ): Promise<{ enrolled: boolean }> {
         const response = await fetch(`${URL}enroll/${personId}?engine=${engine || 'iobroker'}`, {
             method: 'POST',
             headers: {
@@ -33,7 +38,7 @@ export class Comm {
             },
             body: JSON.stringify(images),
         });
-        return (await response.json()).advancedId;
+        return await response.json();
     }
 
     static async verify(

@@ -20,7 +20,7 @@ import { Check, Close, Delete, Person, Add, Edit, QuestionMark } from '@mui/icon
 
 import { type AdminConnection, I18n, type ThemeType } from '@iobroker/adapter-react-v5';
 
-import type { FaceAdapterConfig, PERSON_ID, TOKEN } from '../types';
+import type { ENGINE, FaceAdapterConfig, PERSON_ID, TOKEN } from '../types';
 import { Camera } from '../components/Camera';
 import { Comm } from '../components/Comm';
 
@@ -117,7 +117,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
         };
     }
 
-    renderResultsDialog() {
+    renderResultsDialog(): React.JSX.Element | null {
         if (this.state.verifyResult === null || this.state.showVerifyDialog === null) {
             return null;
         }
@@ -197,19 +197,21 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         disabled={!this.state.images.length || this.state.processing}
                         onClick={async () => {
                             if (await this.validateTokens()) {
+                                const engine: ENGINE = this.props.native.engine || 'iobroker';
                                 await this.setStateAsync({ processing: true });
                                 try {
-                                    const isEnrolled = await Comm.enroll(
+                                    const result = await Comm.enroll(
                                         this.state.accessToken,
-                                        this.props.native.engine || 'iobroker',
-                                        this.state.persons[this.state.showEnrollDialog as number].id,
+                                        engine,
                                         this.state.images,
+                                        this.state.persons[this.state.showEnrollDialog as number].id,
                                     );
-                                    if (isEnrolled) {
+                                    if (
+                                        result.enrolled &&
+                                        !this.state.persons[this.state.showEnrollDialog as number][engine]
+                                    ) {
                                         const persons = [...this.state.persons];
-                                        persons[this.state.showEnrollDialog as number][
-                                            this.props.native.engine || 'iobroker'
-                                        ] = true;
+                                        persons[this.state.showEnrollDialog as number][engine] = true;
                                         this.setState({ persons });
                                     }
                                     this.setState({ showEnrollDialog: null, processing: false });

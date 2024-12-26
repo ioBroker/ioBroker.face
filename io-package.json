@@ -2,9 +2,7 @@
     "common": {
         "name": "face",
         "version": "0.0.1",
-        "news": {
-
-        },
+        "news": {},
         "title": "Face detection",
         "titleLang": {
             "en": "Face detection"
@@ -80,6 +78,83 @@
             "type": "folder",
             "common": {
                 "name": "Persons"
+            },
+            "native": {}
+        },
+        {
+            "_id": "images",
+            "type": "folder",
+            "common": {
+                "name": "Upload images"
+            },
+            "native": {}
+        },
+        {
+            "_id": "images.upload",
+            "type": "state",
+            "common": {
+                "name": "Data URL image",
+                "type": "string",
+                "role": "state",
+                "write": true,
+                "read": true,
+                "def": ""
+            },
+            "native": {}
+        },
+        {
+            "_id": "images.uploaded",
+            "type": "state",
+            "common": {
+                "name": "Uploaded images",
+                "desc": "Number of uploaded images to perform verification or training",
+                "type": "number",
+                "role": "state",
+                "write": false,
+                "read": true,
+                "def": 0
+            },
+            "native": {}
+        },
+        {
+            "_id": "images.verify",
+            "type": "state",
+            "common": {
+                "name": "Verify",
+                "desc": "Trigger verification of uploaded images against known persons",
+                "type": "boolean",
+                "role": "button",
+                "write": true,
+                "read": false,
+                "def": false
+            },
+            "native": {}
+        },
+        {
+            "_id": "images.enroll",
+            "type": "state",
+            "common": {
+                "name": "Train person",
+                "desc": "Write person name to enroll",
+                "type": "string",
+                "role": "state",
+                "write": true,
+                "read": false,
+                "def": ""
+            },
+            "native": {}
+        },
+        {
+            "_id": "images.lastResult",
+            "type": "state",
+            "common": {
+                "name": "Last result",
+                "desc": "Last result of enroll or verify. Errors starts with '<' and ends with '>'",
+                "type": "string",
+                "role": "state",
+                "write": false,
+                "read": true,
+                "def": ""
             },
             "native": {}
         }

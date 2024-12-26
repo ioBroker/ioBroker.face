@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { PERSON_ID, TOKEN } from '../../src-admin/src/types';
 const URL = 'https://face.iobroker.in/';
 
 export class Comm {
@@ -20,7 +21,12 @@ export class Comm {
         return response.data.persons;
     }
 
-    static async enroll(accessToken: string, engine: string, personId: string, images: string[]): Promise<number> {
+    static async enroll(
+        accessToken: string,
+        engine: string,
+        images: string[],
+        personId: string,
+    ): Promise<{ enrolled: boolean }> {
         const response = await axios.post(`${URL}enroll/${personId}?engine=${engine || 'iobroker'}`, images, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -28,6 +34,35 @@ export class Comm {
             },
         });
         return response.data.advancedId;
+    }
+
+    static async verify(
+        accessToken: TOKEN,
+        engine: string,
+        images: string[],
+        personId?: PERSON_ID,
+    ): Promise<{ person: PERSON_ID; results: { person: PERSON_ID; result: boolean; error?: string }[] }> {
+        if (personId) {
+            const response = await fetch(`${URL}verify?person=${personId}&engine=${engine || 'iobroker'}`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-type': 'application/json',
+                },
+                body: JSON.stringify(images),
+            });
+            return await response.json();
+        }
+
+        const response = await fetch(`${URL}verify?engine=${engine || 'iobroker'}`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-type': 'application/json',
+            },
+            body: JSON.stringify(images),
+        });
+        return await response.json();
     }
 
     static async edit(accessToken: string, personId: string, data: { id: string; name: string }): Promise<void> {
