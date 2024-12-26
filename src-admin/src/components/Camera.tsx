@@ -64,6 +64,7 @@ export class Camera extends React.Component<CameraProps, CameraState> {
         }
         if (this.refVideo.current) {
             this.refVideo.current.pause();
+            this.refVideo.current.onloadedmetadata = null;
             this.refVideo.current.src = '';
             this.refVideo.current.load();
         }
@@ -111,15 +112,17 @@ export class Camera extends React.Component<CameraProps, CameraState> {
                     if (stream) {
                         this.refVideo.current!.srcObject = stream;
                         this.refVideo.current!.onloadedmetadata = async () => {
-                            await this.refVideo.current!.play();
-                            console.log(
-                                `Playing live media stream: ${this.refVideo.current!.clientWidth}x${this.refVideo.current!.clientHeight}`,
-                            );
-                            if (this.refOverlayFrame.current && this.refOverlay.current) {
-                                this.refOverlay.current.style.opacity = '1';
-                                this.refOverlayFrame.current.style.width = `${Math.floor(
-                                    (this.refOverlay.current.clientHeight * 480) / 640,
-                                )}px`;
+                            if (this.refVideo.current) {
+                                await this.refVideo.current.play();
+                                console.log(
+                                    `Playing live media stream: ${this.refVideo.current.clientWidth}x${this.refVideo.current.clientHeight}`,
+                                );
+                                if (this.refOverlayFrame.current && this.refOverlay.current) {
+                                    this.refOverlay.current.style.opacity = '1';
+                                    this.refOverlayFrame.current.style.width = `${Math.floor(
+                                        (this.refOverlay.current.clientHeight * 480) / 640,
+                                    )}px`;
+                                }
                             }
                         };
                     }
@@ -156,7 +159,10 @@ export class Camera extends React.Component<CameraProps, CameraState> {
 
     renderImage(index: number): React.JSX.Element {
         return (
-            <div style={{ position: 'relative', width: 200, borderRadius: 5 }}>
+            <div
+                key={index}
+                style={{ position: 'relative', width: 200, borderRadius: 5 }}
+            >
                 <IconButton
                     style={{
                         position: 'absolute',
@@ -207,7 +213,7 @@ export class Camera extends React.Component<CameraProps, CameraState> {
                         fullWidth
                         style={{ marginBottom: 16 }}
                         variant="standard"
-                        disabled={!this.state.cameras}
+                        disabled={!this.state.cameras || !!this.props.disabled}
                         value={this.state.selectedCamera || 'default'}
                         onChange={e => {
                             this.setState({ selectedCamera: e.target.value || 'default' }, async () => {
@@ -271,8 +277,10 @@ export class Camera extends React.Component<CameraProps, CameraState> {
                         </Button>
                         {this.props.onVerifyAllPersonsChanged ? (
                             <FormControlLabel
+                                style={{ marginLeft: 16 }}
                                 control={
                                     <Checkbox
+                                        disabled={!!this.props.disabled}
                                         checked={this.props.verifyAllPersons}
                                         onChange={() =>
                                             this.props.onVerifyAllPersonsChanged!(!this.props.verifyAllPersons)
@@ -281,6 +289,15 @@ export class Camera extends React.Component<CameraProps, CameraState> {
                                 }
                                 label={I18n.t('Check all persons')}
                             />
+                        ) : null}
+                        {this.state.images.length ? (
+                            <Button
+                                disabled={!!this.props.disabled}
+                                onClick={() => this.setState({ images: [] }, () => this.props.onImagesUpdate([]))}
+                                variant="outlined"
+                            >
+                                {I18n.t('Clear all')}
+                            </Button>
                         ) : null}
                     </div>
 

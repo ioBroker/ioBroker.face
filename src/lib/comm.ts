@@ -1,6 +1,12 @@
 import axios from 'axios';
-import type { PERSON_ID, TOKEN } from '../../src-admin/src/types';
+import type { ENGINE, PERSON_ID, TOKEN } from '../../src-admin/src/types';
 const URL = 'https://face.iobroker.in/';
+
+export type STATISTICS = {
+    usage: Record<ENGINE, { monthly: number; daily: number; lastTime: number }>;
+    limits: Record<ENGINE, { daily: number; monthly: number }>;
+    licenseTill: number;
+};
 
 export class Comm {
     static async deletePerson(accessToken: string, personId: string): Promise<number> {
@@ -12,13 +18,21 @@ export class Comm {
         return response.data.persons;
     }
 
-    static async readPersons(accessToken: string): Promise<{ name: string; id: string; advancedId?: number }[]> {
+    static async readPersons(accessToken: string): Promise<{
+        persons: {
+            name: string;
+            id: PERSON_ID;
+            iobroker?: { enrolled: boolean; monthly: number; daily: number; lastTime: number };
+            advanced?: { enrolled: boolean; monthly: number; daily: number; lastTime: number };
+        }[];
+        stats: STATISTICS;
+    }> {
         const response = await axios.get(`${URL}persons`, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
         });
-        return response.data.persons;
+        return response.data;
     }
 
     static async enroll(
@@ -26,7 +40,7 @@ export class Comm {
         engine: string,
         images: string[],
         personId: string,
-    ): Promise<{ enrolled: boolean }> {
+    ): Promise<{ enrolled: boolean; stats?: STATISTICS }> {
         const response = await axios.post(`${URL}enroll/${personId}?engine=${engine || 'iobroker'}`, images, {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
@@ -41,7 +55,15 @@ export class Comm {
         engine: string,
         images: string[],
         personId?: PERSON_ID,
-    ): Promise<{ person: PERSON_ID; results: { person: PERSON_ID; result: boolean; error?: string }[] }> {
+    ): Promise<{
+        error?: string;
+        person?: PERSON_ID;
+        // Results for each person
+        results: { person: PERSON_ID; result: boolean; error?: string }[];
+        // Errors for each image
+        errors?: string[];
+        stats?: STATISTICS;
+    }> {
         if (personId) {
             const response = await fetch(`${URL}verify?person=${personId}&engine=${engine || 'iobroker'}`, {
                 method: 'POST',

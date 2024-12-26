@@ -89,8 +89,7 @@ class App extends GenericApp<GenericAppProps, AppState> {
         super(props, extendedProps);
 
         Object.assign(this.state, {
-            selectedTab:
-                window.localStorage.getItem(`${this.adapterName}.${this.instance}.selectedTab`) || 'controller',
+            selectedTab: window.localStorage.getItem(`${this.adapterName}.${this.instance}.selectedTab`) || 'options',
             alive: false,
             ready: false,
         });

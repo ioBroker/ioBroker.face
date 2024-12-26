@@ -14,15 +14,17 @@ import {
     TableHead,
     TableBody,
     Fab,
+    CircularProgress,
+    LinearProgress,
 } from '@mui/material';
 
-import { Check, Close, Delete, Person, Add, Edit, QuestionMark } from '@mui/icons-material';
+import { Check, Close, Delete, Person, Add, Edit, QuestionMark, Refresh } from '@mui/icons-material';
 
 import { type AdminConnection, I18n, type ThemeType } from '@iobroker/adapter-react-v5';
 
 import type { ENGINE, FaceAdapterConfig, PERSON_ID, TOKEN } from '../types';
 import { Camera } from '../components/Camera';
-import { Comm } from '../components/Comm';
+import { Comm, type STATISTICS } from '../components/Comm';
 
 const MAX_NAME_LENGTH = 48;
 const MAX_ID_LENGTH = 16;
@@ -51,6 +53,7 @@ const styles: Record<string, React.CSSProperties> = {
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
+        position: 'relative',
     },
     input: {
         marginTop: 2,
@@ -89,13 +92,27 @@ interface PersonsState {
     refreshToken: TOKEN;
     showEnrollDialog: null | number;
     showVerifyDialog: null | number;
-    persons: { name: string; id: string; advanced?: boolean; iobroker?: boolean }[];
+    persons: {
+        name: string;
+        id: string;
+        iobroker?: { enrolled: boolean; monthly: number; daily: number; lastTime: number };
+        advanced?: { enrolled: boolean; monthly: number; daily: number; lastTime: number };
+    }[];
+    stats: STATISTICS | null;
     images: string[];
     showEditDialog: null | number;
     editItem: { name: string; id: string } | null;
     processing: boolean;
     verifyResult: false | PERSON_ID | null;
     verifyAllPersons: boolean;
+    detailedError: {
+        error?: string;
+        person?: PERSON_ID;
+        // Results for each person
+        results: { person: PERSON_ID; result: boolean; error?: string }[];
+        // Errors for each image
+        errors?: string[];
+    } | null;
 }
 
 class Persons extends Component<PersonsProps, PersonsState> {
@@ -114,6 +131,8 @@ class Persons extends Component<PersonsProps, PersonsState> {
             processing: false,
             verifyResult: null,
             verifyAllPersons: false,
+            detailedError: null,
+            stats: null,
         };
     }
 
@@ -125,24 +144,71 @@ class Persons extends Component<PersonsProps, PersonsState> {
             <Dialog
                 open={!0}
                 onClose={() => this.setState({ verifyResult: null })}
-                maxWidth="lg"
+                maxWidth="md"
                 fullWidth
             >
                 <DialogTitle>{I18n.t('The result is')}</DialogTitle>
-                <DialogContent
-                    style={{
-                        color: this.state.verifyResult
-                            ? this.props.themeType === 'dark'
-                                ? '#7eff7e'
-                                : '#009e00'
-                            : this.props.themeType === 'dark'
-                              ? '#ff7474'
-                              : '#880000',
-                    }}
-                >
-                    {this.state.verifyResult === false
-                        ? I18n.t('Person is NOT %s', this.state.persons[this.state.showVerifyDialog].id)
-                        : I18n.t('Detected person is "%s"', this.state.verifyResult)}
+                <DialogContent>
+                    <div
+                        style={{
+                            color: this.state.verifyResult
+                                ? this.props.themeType === 'dark'
+                                    ? '#7eff7e'
+                                    : '#009e00'
+                                : this.props.themeType === 'dark'
+                                  ? '#ff7474'
+                                  : '#880000',
+                        }}
+                    >
+                        {this.state.verifyResult === false
+                            ? this.state.persons.length > 1 && this.state.verifyAllPersons
+                                ? I18n.t('Known person NOT found')
+                                : I18n.t('Person is NOT %s', this.state.persons[this.state.showVerifyDialog].id)
+                            : I18n.t('Detected person is "%s"', this.state.verifyResult)}
+                    </div>
+                    {this.state.detailedError?.results ? (
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>{I18n.t('Person')}</TableCell>
+                                    <TableCell>{I18n.t('Error')}</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {this.state.detailedError.results.map((item, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell>{item.person}</TableCell>
+                                        <TableCell>
+                                            {I18n.t(item.error?.replace('Error: ', '') || 'Unknown error')}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : null}
+                    {this.state.detailedError?.error ? (
+                        <div style={{ color: this.props.themeType === 'dark' ? '#ff7474' : '#880000' }}>
+                            {I18n.t(this.state.detailedError.error)}
+                        </div>
+                    ) : null}
+                    {this.state.detailedError?.errors ? (
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>{I18n.t('Image')}</TableCell>
+                                    <TableCell>{I18n.t('Error')}</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {this.state.detailedError.errors.map((item, i) => (
+                                    <TableRow key={i}>
+                                        <TableCell>{i}</TableCell>
+                                        <TableCell>{item}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : null}
                 </DialogContent>
                 <DialogActions>
                     <Button
@@ -206,15 +272,19 @@ class Persons extends Component<PersonsProps, PersonsState> {
                                         this.state.images,
                                         this.state.persons[this.state.showEnrollDialog as number].id,
                                     );
-                                    if (
-                                        result.enrolled &&
-                                        !this.state.persons[this.state.showEnrollDialog as number][engine]
-                                    ) {
-                                        const persons = [...this.state.persons];
-                                        persons[this.state.showEnrollDialog as number][engine] = true;
-                                        this.setState({ persons });
+                                    if (result.enrolled) {
+                                        await this.readPersons();
                                     }
-                                    this.setState({ showEnrollDialog: null, processing: false });
+
+                                    if (result.stats) {
+                                        this.setState({
+                                            showEnrollDialog: null,
+                                            processing: false,
+                                            stats: result.stats,
+                                        });
+                                    } else {
+                                        this.setState({ showEnrollDialog: null, processing: false });
+                                    }
                                 } catch (e) {
                                     this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
                                     this.setState({ processing: false });
@@ -223,7 +293,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                                 this.props.showToast(`${I18n.t('Cannot get access token')}`);
                             }
                         }}
-                        startIcon={<Add />}
+                        startIcon={this.state.processing ? <CircularProgress size={20} /> : <Add />}
                     >
                         {I18n.t('Enroll')}
                     </Button>
@@ -254,13 +324,17 @@ class Persons extends Component<PersonsProps, PersonsState> {
                 fullWidth
             >
                 <DialogTitle>
-                    {I18n.t('Verify person')}
-                    <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
-                        {this.state.persons[this.state.showVerifyDialog].id}
-                        {this.state.persons[this.state.showVerifyDialog].name
-                            ? ` (${this.state.persons[this.state.showVerifyDialog].name})`
-                            : ''}
-                    </span>
+                    {this.state.persons.length > 1 && this.state.verifyAllPersons
+                        ? I18n.t('Verify between all persons')
+                        : I18n.t('Verify person')}
+                    {this.state.persons.length > 1 && this.state.verifyAllPersons ? null : (
+                        <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
+                            {this.state.persons[this.state.showVerifyDialog].id}
+                            {this.state.persons[this.state.showVerifyDialog].name
+                                ? ` (${this.state.persons[this.state.showVerifyDialog].name})`
+                                : ''}
+                        </span>
+                    )}
                 </DialogTitle>
                 <DialogContent>
                     <Camera
@@ -268,7 +342,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         width={480}
                         height={640}
                         disabled={this.state.processing}
-                        verifyAllPersons={this.state.verifyAllPersons}
+                        verifyAllPersons={this.state.persons.length > 1 ? this.state.verifyAllPersons : undefined}
                         onVerifyAllPersonsChanged={
                             this.state.persons.length > 1
                                 ? verifyAllPersons => this.setState({ verifyAllPersons })
@@ -290,26 +364,40 @@ class Persons extends Component<PersonsProps, PersonsState> {
                                         this.state.accessToken,
                                         this.props.native.engine || 'iobroker',
                                         this.state.images,
-                                        this.state.verifyAllPersons
+                                        this.state.verifyAllPersons && this.state.persons.length > 1
                                             ? undefined
                                             : this.state.persons[this.state.showVerifyDialog as number].id,
                                     );
                                     if (
                                         result.person === this.state.persons[this.state.showVerifyDialog as number].id
                                     ) {
-                                        this.setState({ verifyResult: result.person });
+                                        if (result.stats) {
+                                            this.setState({
+                                                verifyResult: result.person,
+                                                detailedError: null,
+                                                stats: result.stats,
+                                            });
+                                        } else {
+                                            this.setState({ verifyResult: result.person, detailedError: null });
+                                        }
+                                    } else if (result.stats) {
+                                        this.setState({
+                                            verifyResult: false,
+                                            detailedError: result,
+                                            stats: result.stats,
+                                        });
                                     } else {
-                                        this.setState({ verifyResult: false });
+                                        this.setState({ verifyResult: false, detailedError: result });
                                     }
                                 } catch (e) {
-                                    this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
+                                    this.props.showToast(`${I18n.t('Cannot verify')}: ${e.toString()}`);
                                 }
                                 this.setState({ processing: false });
                             } else {
                                 this.props.showToast(`${I18n.t('Cannot get access token')}`);
                             }
                         }}
-                        startIcon={<QuestionMark />}
+                        startIcon={this.state.processing ? <CircularProgress size={20} /> : <QuestionMark />}
                     >
                         {I18n.t('Verify')}
                     </Button>
@@ -515,10 +603,11 @@ class Persons extends Component<PersonsProps, PersonsState> {
                                     );
                                     if (length !== this.state.persons.length - 1) {
                                         await this.readPersons();
+                                        this.setState({ showConfirmDialog: null }, () => this.sendSync());
                                     } else {
                                         const persons = [...this.state.persons];
                                         persons.splice(this.state.showConfirmDialog as number, 1);
-                                        this.setState({ persons }, () => this.sendSync());
+                                        this.setState({ persons, showConfirmDialog: null }, () => this.sendSync());
                                     }
                                 } catch (e) {
                                     this.props.showToast(`${I18n.t('Cannot delete')}: ${e.toString()}`);
@@ -554,9 +643,13 @@ class Persons extends Component<PersonsProps, PersonsState> {
     }
 
     async readPersons(): Promise<void> {
+        await this.setStateAsync({ processing: true });
         await this.validateTokens();
         if (this.state.accessToken) {
-            this.setState({ persons: await Comm.readPersons(this.state.accessToken) });
+            const result = await Comm.readPersons(this.state.accessToken);
+            this.setState({ persons: result.persons, stats: result.stats, processing: false });
+        } else {
+            this.setState({ processing: false });
         }
     }
 
@@ -680,7 +773,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                             <QuestionMark />
                         </IconButton>
                     ) : (
-                        <div style={{ width: 34, height: 34 }} />
+                        <div style={{ width: 34, height: 5, display: 'inline-block' }} />
                     )}
                     <IconButton
                         size="small"
@@ -715,18 +808,62 @@ class Persons extends Component<PersonsProps, PersonsState> {
     }
 
     render(): React.JSX.Element {
+        const engine: ENGINE = this.props.native.engine || 'iobroker';
+        const goodColor = this.props.themeType === 'dark' ? '#ceffce' : '#002700';
+        const errorColor = this.props.themeType === 'dark' ? '#ff7474' : '#880000';
+
         return (
             <div style={styles.panel}>
+                {this.state.processing ? (
+                    <LinearProgress style={{ position: 'absolute', top: 0, left: 0, right: 0 }} />
+                ) : null}
                 {this.renderConfirmDialog()}
                 {this.renderEnrollDialog()}
                 {this.renderEditDialog()}
                 {this.renderVerifyDialog()}
                 {this.renderResultsDialog()}
+                {this.state.stats ? (
+                    <div>
+                        <span style={{ color: this.state.stats.licenseTill < Date.now() ? errorColor : goodColor }}>
+                            {this.state.stats.licenseTill
+                                ? `${I18n.t('License valid till')}: ${this.state.stats.licenseTill - Date.now() < 72 * 3_600_000 ? new Date(this.state.stats.licenseTill).toLocaleString() : new Date(this.state.stats.licenseTill).toLocaleDateString()}`
+                                : I18n.t('No valid license found')}
+                            ,
+                        </span>
+                        <span
+                            style={{
+                                marginLeft: 8,
+                                color:
+                                    this.state.stats.usage[engine].monthly > this.state.stats.limits[engine].monthly
+                                        ? errorColor
+                                        : goodColor,
+                            }}
+                        >
+                            {I18n.t('Monthly usage')}: {this.state.stats.usage[engine].monthly} /{' '}
+                            {this.state.stats.limits[engine].monthly},
+                        </span>
+                        <span
+                            style={{
+                                marginLeft: 8,
+                                color:
+                                    this.state.stats.usage[engine].daily > this.state.stats.limits[engine].daily
+                                        ? errorColor
+                                        : goodColor,
+                            }}
+                        >
+                            {I18n.t('Daily usage')}: {this.state.stats.usage[engine].daily} /{' '}
+                            {this.state.stats.limits[engine].daily}
+                        </span>
+                    </div>
+                ) : (
+                    <div style={{ height: 21, width: 50 }} />
+                )}
                 <Table size="small">
                     <TableHead>
                         <TableRow>
-                            <TableCell>
+                            <TableCell style={{ width: 64 }}>
                                 <Fab
+                                    title={I18n.t('Add new household person')}
                                     size="small"
                                     disabled={(this.state.persons?.length || 0) >= 10 || !this.state.accessToken}
                                     onClick={() =>
@@ -741,7 +878,16 @@ class Persons extends Component<PersonsProps, PersonsState> {
                             </TableCell>
                             <TableCell>{I18n.t('ID')}</TableCell>
                             <TableCell>{I18n.t('Name')}</TableCell>
-                            <TableCell></TableCell>
+                            <TableCell style={{ textAlign: 'right' }}>
+                                <IconButton
+                                    title={I18n.t('Read from cloud again')}
+                                    size="small"
+                                    disabled={!this.state.accessToken}
+                                    onClick={() => this.readPersons()}
+                                >
+                                    <Refresh />
+                                </IconButton>
+                            </TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>{this.state.persons.map((_person, i) => this.renderPerson(i))}</TableBody>
