@@ -68,7 +68,7 @@ export class Comm {
         stats?: STATISTICS;
     }> {
         if (personId) {
-            const response = await fetch(`${URL}verify?person=${personId}&engine=${engine || 'iobroker'}`, {
+            const response = await fetch(`${URL}verify?person=${personId}&engine=${engine || 'iobroker'}&stats=true`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${accessToken}`,

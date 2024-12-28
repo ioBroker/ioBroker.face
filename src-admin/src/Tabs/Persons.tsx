@@ -251,6 +251,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         width={480}
                         height={640}
                         disabled={this.state.processing}
+                        numberOfSnapshots={4}
                         onImagesUpdate={(images: string[]): void => {
                             this.setState({ images });
                         }}
@@ -341,6 +342,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         id="camera"
                         width={480}
                         height={640}
+                        numberOfSnapshots={2}
                         disabled={this.state.processing}
                         verifyAllPersons={this.state.persons.length > 1 ? this.state.verifyAllPersons : undefined}
                         onVerifyAllPersonsChanged={

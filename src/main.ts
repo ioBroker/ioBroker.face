@@ -73,7 +73,7 @@ export class FaceAdapter extends Adapter {
                     // check if this person still exist
                     const personId = localPerson.value._id.split('.').pop();
                     if (personId) {
-                        const person = cloudPersons.find(p => p.id === personId);
+                        const person = cloudPersons.persons.find(p => p.id === personId);
                         if (person) {
                             // Check if the name is still the same
                             if (person.name !== localPerson.value.common.name) {
@@ -89,7 +89,7 @@ export class FaceAdapter extends Adapter {
                 }
 
                 // create new
-                for (const cloudPerson of cloudPersons) {
+                for (const cloudPerson of cloudPersons.persons) {
                     if (!localPersons.rows.find(lp => lp.value._id.endsWith(`.${cloudPerson.id}`))) {
                         // create this person
                         await this.setObject(`persons.${cloudPerson.id}`, {

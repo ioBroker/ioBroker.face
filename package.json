@@ -18,6 +18,9 @@
         "type": "git",
         "url": "https://github.com/ioBroker/ioBroker.face"
     },
+    "optionalDependencies": {
+        "face-api.js": "^0.22.2"
+    },
     "dependencies": {
         "@iobroker/adapter-core": "^3.2.2",
         "axios": "^1.7.8"
