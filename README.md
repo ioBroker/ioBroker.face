@@ -14,9 +14,9 @@
 ## Description
 This adapter uses cloud engine to detect and identify faces on the images. It can be used to identify the person on the image.
 
-Before start, you need running account on https://iobroker.pro and subscription for Assistant or Remote connection.
+Before start, you need a running account on https://iobroker.pro and subscription for Assistant or Remote connection.
 
-After that the persons must be created and trained. This can be done in the settings of the adapter on the "persons" tab. Maximum 10 persons can be created.
+After that, the persons must be created and trained. This can be done in the settings of the adapter on the "persons" tab. Maximum 10 people can be created.
 
 ## Usage
 ### Messages
@@ -35,18 +35,18 @@ Image can be encoded as:
 - ioBroker URL, like `iobstate://0_userdata.0.image/val` (`/val` is optional). State could be again URL to the image, Base64 encoded image or ioBroker URL. Up to 3 recursive levels are supported.
 - ioBroker URL, like `iobobject://system.adapter.face.0/common.extIcon`
 
-If person is detected, the state `face.X.persons.<PERSON>` will be set to true with no acknowledge.
+If person is detected, the state `face.X.persons.<PERSON>` will be set to true with no acknowledgement.
 
 ### States
-Following states are created:
+The following states are created:
 - `face.X.persons.<PERSON>` - Every created person will have the state. If the person is detected, the state will be set to true.
 - `face.X.images.upload` - Write to this state the image format described above to detect the person on the image.
-- `face.X.images.uploaded` - Current number of uploaded images. We suggest to upload 2 or more images to detect the liveness. If the image is older than 15 seconds it will be removed from the queue.
+- `face.X.images.uploaded` - Current number of uploaded images. We suggest uploading of 2 or more images to detect the liveness. If the image is older than 15 seconds it will be removed from the queue.
 - `face.X.images.verify` - Trigger the identification of the person on the uploaded images.
 - `face.X.images.enroll` - Trigger the training of the person that is defined in this state on the uploaded images.
 - `face.X.images.uploadResult` - The result of the detection or enrollment. If the person is detected, the state `face.X.persons.<PERSON>` will be set to true and the `face.X.images.uploadResult` to the person ID.
 
-Following values could be in `face.X.images.uploadResult`:
+The following values could be in `face.X.images.uploadResult`:
 - `PERSON_ID` - The person ID that was detected on the images.
 - `<no person>` - No person was identified on the images.
 - `<authentication error>` - Credentials are wrong or the subscription is expired.
