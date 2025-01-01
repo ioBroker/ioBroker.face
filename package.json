@@ -32,7 +32,7 @@
     "@iobroker/build-tools": "^2.0.9",
     "@iobroker/eslint-config": "^1.0.0",
     "@iobroker/types": "^7.0.6",
-    "@types/node": "^22.9.4",
+    "@types/node": "^22.10.3",
     "@types/jsonwebtoken": "^9.0.7",
     "jsonwebtoken": "^9.0.2",
     "chai": "^4.5.0",
