@@ -1,162 +1,187 @@
 {
-    "common": {
-        "name": "face",
-        "version": "0.0.1",
-        "news": {},
-        "title": "Face detection",
-        "titleLang": {
-            "en": "Face detection"
-        },
-        "desc": {
-            "en": "Face detection"
-        },
-        "authors": ["Denis Haev <dogafox@gmail.com>"],
-        "license": "MIT",
-        "platform": "Javascript/Node.js",
-        "mode": "daemon",
-        "nogit": true,
-        "loglevel": "info",
-        "readme": "https://github.com/ioBroker/ioBroker.face/blob/master/README.md",
-        "icon": "face.png",
-        "connectionType": "local",
-        "dataSource": "push",
-        "adminUI": {
-            "config": "materialize"
-        },
-        "tier": 3,
-        "keywords": ["face", "face-detection", "detection"],
-        "stopTimeout": 5000,
-        "enabled": true,
-        "compact": true,
-        "extIcon": "https://raw.githubusercontent.com/ioBroker/ioBroker.face/master/admin/face.png",
-        "type": "utils",
-        "messagebox": true,
-        "plugins": {
-            "sentry": {
-                "dsn1": "https://de38f4a20c964ce395d2e236c64aa075@sentry.iobroker.net/234"
-            }
-        },
-        "licenseInformation": {
-            "type": "free",
-            "license": "MIT"
-        },
-        "supportedMessages": {
-            "deviceManager": true
-        }
+  "common": {
+    "name": "face",
+    "version": "0.0.2",
+    "news": {
+      "0.0.2": {
+        "en": "Initial commit",
+        "de": "Ursprüngliche Verpflichtung",
+        "ru": "Первоначальное обязательство",
+        "pt": "Compromisso inicial",
+        "nl": "Eerste commit",
+        "fr": "Engagement initial",
+        "it": "Impegno iniziale",
+        "es": "Composición inicial",
+        "pl": "Początkowe zobowiązanie",
+        "uk": "Початкова комісія",
+        "zh-cn": "初步承诺"
+      }
     },
-    "protectedNative": ["password", "login"],
-    "encryptedNative": ["password"],
-    "native": {
-        "engine": "iobroker",
-        "login": "",
-        "password": "",
-        "persons": []
+    "title": "Face detection",
+    "titleLang": {
+      "en": "Face detection"
     },
-    "objects": [],
-    "instanceObjects": [
-        {
-            "_id": "info",
-            "type": "folder",
-            "common": {
-                "name": "Information"
-            },
-            "native": {}
-        },
-        {
-            "_id": "info.tokens",
-            "type": "state",
-            "common": {
-                "expert": true,
-                "name": "Tokens",
-                "type": "json",
-                "role": "state"
-            },
-            "native": {}
-        },
-        {
-            "_id": "persons",
-            "type": "folder",
-            "common": {
-                "name": "Persons"
-            },
-            "native": {}
-        },
-        {
-            "_id": "images",
-            "type": "folder",
-            "common": {
-                "name": "Upload images"
-            },
-            "native": {}
-        },
-        {
-            "_id": "images.upload",
-            "type": "state",
-            "common": {
-                "name": "Data URL image",
-                "type": "string",
-                "role": "state",
-                "write": true,
-                "read": true,
-                "def": ""
-            },
-            "native": {}
-        },
-        {
-            "_id": "images.uploaded",
-            "type": "state",
-            "common": {
-                "name": "Uploaded images",
-                "desc": "Number of uploaded images to perform verification or training",
-                "type": "number",
-                "role": "state",
-                "write": false,
-                "read": true,
-                "def": 0
-            },
-            "native": {}
-        },
-        {
-            "_id": "images.verify",
-            "type": "state",
-            "common": {
-                "name": "Verify",
-                "desc": "Trigger verification of uploaded images against known persons",
-                "type": "boolean",
-                "role": "button",
-                "write": true,
-                "read": false,
-                "def": false
-            },
-            "native": {}
-        },
-        {
-            "_id": "images.enroll",
-            "type": "state",
-            "common": {
-                "name": "Train person",
-                "desc": "Write person name to enroll",
-                "type": "string",
-                "role": "state",
-                "write": true,
-                "read": false,
-                "def": ""
-            },
-            "native": {}
-        },
-        {
-            "_id": "images.lastResult",
-            "type": "state",
-            "common": {
-                "name": "Last result",
-                "desc": "Last result of enroll or verify. Errors starts with '<' and ends with '>'",
-                "type": "string",
-                "role": "state",
-                "write": false,
-                "read": true,
-                "def": ""
-            },
-            "native": {}
-        }
-    ]
+    "desc": {
+      "en": "Face detection"
+    },
+    "authors": [
+      "Denis Haev <dogafox@gmail.com>"
+    ],
+    "license": "MIT",
+    "platform": "Javascript/Node.js",
+    "mode": "daemon",
+    "nogit": true,
+    "loglevel": "info",
+    "readme": "https://github.com/ioBroker/ioBroker.face/blob/master/README.md",
+    "icon": "face.png",
+    "connectionType": "local",
+    "dataSource": "push",
+    "adminUI": {
+      "config": "materialize"
+    },
+    "tier": 3,
+    "keywords": [
+      "face",
+      "face-detection",
+      "detection"
+    ],
+    "stopTimeout": 5000,
+    "enabled": true,
+    "compact": true,
+    "extIcon": "https://raw.githubusercontent.com/ioBroker/ioBroker.face/master/admin/face.png",
+    "type": "utils",
+    "messagebox": true,
+    "plugins": {
+      "sentry": {
+        "dsn1": "https://de38f4a20c964ce395d2e236c64aa075@sentry.iobroker.net/234"
+      }
+    },
+    "licenseInformation": {
+      "type": "free",
+      "license": "MIT"
+    },
+    "supportedMessages": {
+      "deviceManager": true
+    }
+  },
+  "protectedNative": [
+    "password",
+    "login"
+  ],
+  "encryptedNative": [
+    "password"
+  ],
+  "native": {
+    "engine": "iobroker",
+    "login": "",
+    "password": "",
+    "persons": []
+  },
+  "objects": [],
+  "instanceObjects": [
+    {
+      "_id": "info",
+      "type": "folder",
+      "common": {
+        "name": "Information"
+      },
+      "native": {}
+    },
+    {
+      "_id": "info.tokens",
+      "type": "state",
+      "common": {
+        "expert": true,
+        "name": "Tokens",
+        "type": "json",
+        "role": "state"
+      },
+      "native": {}
+    },
+    {
+      "_id": "persons",
+      "type": "folder",
+      "common": {
+        "name": "Persons"
+      },
+      "native": {}
+    },
+    {
+      "_id": "images",
+      "type": "folder",
+      "common": {
+        "name": "Upload images"
+      },
+      "native": {}
+    },
+    {
+      "_id": "images.upload",
+      "type": "state",
+      "common": {
+        "name": "Data URL image",
+        "type": "string",
+        "role": "state",
+        "write": true,
+        "read": true,
+        "def": ""
+      },
+      "native": {}
+    },
+    {
+      "_id": "images.uploaded",
+      "type": "state",
+      "common": {
+        "name": "Uploaded images",
+        "desc": "Number of uploaded images to perform verification or training",
+        "type": "number",
+        "role": "state",
+        "write": false,
+        "read": true,
+        "def": 0
+      },
+      "native": {}
+    },
+    {
+      "_id": "images.verify",
+      "type": "state",
+      "common": {
+        "name": "Verify",
+        "desc": "Trigger verification of uploaded images against known persons",
+        "type": "boolean",
+        "role": "button",
+        "write": true,
+        "read": false,
+        "def": false
+      },
+      "native": {}
+    },
+    {
+      "_id": "images.enroll",
+      "type": "state",
+      "common": {
+        "name": "Train person",
+        "desc": "Write person name to enroll",
+        "type": "string",
+        "role": "state",
+        "write": true,
+        "read": false,
+        "def": ""
+      },
+      "native": {}
+    },
+    {
+      "_id": "images.lastResult",
+      "type": "state",
+      "common": {
+        "name": "Last result",
+        "desc": "Last result of enroll or verify. Errors starts with '<' and ends with '>'",
+        "type": "string",
+        "role": "state",
+        "write": false,
+        "read": true,
+        "def": ""
+      },
+      "native": {}
+    }
+  ]
 }
