@@ -1,6 +1,6 @@
 {
     "name": "iobroker.face",
-    "version": "0.1.13",
+    "version": "0.0.1",
     "description": "Controlling and simulation of face devices",
     "author": {
         "name": "Denis Haev",
