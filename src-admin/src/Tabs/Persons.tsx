@@ -25,6 +25,7 @@ import { type AdminConnection, I18n, type ThemeType } from '@iobroker/adapter-re
 import type { ENGINE, FaceAdapterConfig, PERSON_ID, TOKEN } from '../types';
 import { Camera } from '../components/Camera';
 import { Comm, type STATISTICS } from '../components/Comm';
+import ScanDialog from '../components/ScanDialog';
 
 const MAX_NAME_LENGTH = 48;
 const MAX_ID_LENGTH = 16;
@@ -99,7 +100,6 @@ interface PersonsState {
         advanced?: { enrolled: boolean; monthly: number; daily: number; lastTime: number };
     }[];
     stats: STATISTICS | null;
-    images: string[];
     showEditDialog: null | number;
     editItem: { name: string; id: string } | null;
     processing: boolean;
@@ -124,7 +124,6 @@ class Persons extends Component<PersonsProps, PersonsState> {
             refreshToken: '',
             persons: [],
             showEnrollDialog: null,
-            images: [],
             editItem: null,
             showEditDialog: null,
             showVerifyDialog: null,
@@ -230,85 +229,58 @@ class Persons extends Component<PersonsProps, PersonsState> {
         }
 
         return (
-            <Dialog
-                open={!0}
-                onClose={() => this.setState({ showEnrollDialog: null })}
-                maxWidth="lg"
-                fullWidth
-            >
-                <DialogTitle>
-                    {I18n.t('Enroll person')}
-                    <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
-                        {this.state.persons[this.state.showEnrollDialog].id}
-                        {this.state.persons[this.state.showEnrollDialog].name
-                            ? ` (${this.state.persons[this.state.showEnrollDialog].name})`
-                            : ''}
-                    </span>
-                </DialogTitle>
-                <DialogContent>
-                    <Camera
-                        id="camera"
-                        width={480}
-                        height={640}
-                        disabled={this.state.processing}
-                        numberOfSnapshots={4}
-                        onImagesUpdate={(images: string[]): void => {
-                            this.setState({ images });
-                        }}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={!this.state.images.length || this.state.processing}
-                        onClick={async () => {
-                            if (await this.validateTokens()) {
-                                const engine: ENGINE = this.props.native.engine || 'iobroker';
-                                await this.setStateAsync({ processing: true });
-                                try {
-                                    const result = await Comm.enroll(
-                                        this.state.accessToken,
-                                        engine,
-                                        this.state.images,
-                                        this.state.persons[this.state.showEnrollDialog as number].id,
-                                    );
-                                    if (result.enrolled) {
-                                        await this.readPersons();
-                                    }
-
-                                    if (result.stats) {
-                                        this.setState({
-                                            showEnrollDialog: null,
-                                            processing: false,
-                                            stats: result.stats,
-                                        });
-                                    } else {
-                                        this.setState({ showEnrollDialog: null, processing: false });
-                                    }
-                                } catch (e) {
-                                    this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
-                                    this.setState({ processing: false });
+            <ScanDialog
+                themeType={this.props.themeType}
+                processing={this.state.processing}
+                numberOfSnapshots={4}
+                title={
+                    <div>
+                        {I18n.t('Enroll person')}
+                        <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
+                            {this.state.persons[this.state.showEnrollDialog].id}
+                            {this.state.persons[this.state.showEnrollDialog].name
+                                ? ` (${this.state.persons[this.state.showEnrollDialog].name})`
+                                : ''}
+                        </span>
+                    </div>
+                }
+                onClose={async (images?: string[]): Promise<void> => {
+                    if (images) {
+                        if (await this.validateTokens()) {
+                            const engine: ENGINE = this.props.native.engine || 'iobroker';
+                            await this.setStateAsync({ processing: true });
+                            try {
+                                const result = await Comm.enroll(
+                                    this.state.accessToken,
+                                    engine,
+                                    images,
+                                    this.state.persons[this.state.showEnrollDialog as number].id,
+                                );
+                                if (result.enrolled) {
+                                    await this.readPersons();
                                 }
-                            } else {
-                                this.props.showToast(`${I18n.t('Cannot get access token')}`);
+
+                                if (result.stats) {
+                                    this.setState({
+                                        showEnrollDialog: null,
+                                        processing: false,
+                                        stats: result.stats,
+                                    });
+                                } else {
+                                    this.setState({ showEnrollDialog: null, processing: false });
+                                }
+                            } catch (e) {
+                                this.props.showToast(`${I18n.t('Cannot enroll')}: ${e.toString()}`);
+                                this.setState({ processing: false });
                             }
-                        }}
-                        startIcon={this.state.processing ? <CircularProgress size={20} /> : <Add />}
-                    >
-                        {I18n.t('Enroll')}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        disabled={this.state.processing}
-                        color="grey"
-                        onClick={() => this.setState({ showEnrollDialog: null })}
-                        startIcon={<Close />}
-                    >
-                        {I18n.t('Cancel')}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                        } else {
+                            this.props.showToast(`${I18n.t('Cannot get access token')}`);
+                        }
+                    } else {
+                        this.setState({ showEnrollDialog: null });
+                    }
+                }}
+            />
         );
     }
 
@@ -316,104 +288,74 @@ class Persons extends Component<PersonsProps, PersonsState> {
         if (this.state.showVerifyDialog === null) {
             return null;
         }
-
         return (
-            <Dialog
-                open={!0}
-                onClose={() => this.setState({ showVerifyDialog: null })}
-                maxWidth="lg"
-                fullWidth
-            >
-                <DialogTitle>
-                    {this.state.persons.length > 1 && this.state.verifyAllPersons
-                        ? I18n.t('Verify between all persons')
-                        : I18n.t('Verify person')}
-                    {this.state.persons.length > 1 && this.state.verifyAllPersons ? null : (
-                        <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
-                            {this.state.persons[this.state.showVerifyDialog].id}
-                            {this.state.persons[this.state.showVerifyDialog].name
-                                ? ` (${this.state.persons[this.state.showVerifyDialog].name})`
-                                : ''}
-                        </span>
-                    )}
-                </DialogTitle>
-                <DialogContent>
-                    <Camera
-                        id="camera"
-                        width={480}
-                        height={640}
-                        numberOfSnapshots={2}
-                        disabled={this.state.processing}
-                        verifyAllPersons={this.state.persons.length > 1 ? this.state.verifyAllPersons : undefined}
-                        onVerifyAllPersonsChanged={
-                            this.state.persons.length > 1
-                                ? verifyAllPersons => this.setState({ verifyAllPersons })
-                                : undefined
-                        }
-                        onImagesUpdate={(images: string[]): void => this.setState({ images })}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        disabled={!this.state.images.length || this.state.processing}
-                        onClick={async () => {
-                            if (await this.validateTokens()) {
-                                await this.setStateAsync({ processing: true });
-                                try {
-                                    const result = await Comm.verify(
-                                        this.state.accessToken,
-                                        this.props.native.engine || 'iobroker',
-                                        this.state.images,
-                                        this.state.verifyAllPersons && this.state.persons.length > 1
-                                            ? undefined
-                                            : this.state.persons[this.state.showVerifyDialog as number].id,
-                                    );
-                                    if (
-                                        result.person === this.state.persons[this.state.showVerifyDialog as number].id
-                                    ) {
-                                        if (result.stats) {
-                                            this.setState({
-                                                verifyResult: result.person,
-                                                detailedError: null,
-                                                stats: result.stats,
-                                            });
-                                        } else {
-                                            this.setState({ verifyResult: result.person, detailedError: null });
-                                        }
-                                    } else if (result.stats) {
+            <ScanDialog
+                themeType={this.props.themeType}
+                processing={this.state.processing}
+                numberOfSnapshots={2}
+                verifyAllPersons={this.state.persons.length > 1 ? this.state.verifyAllPersons : undefined}
+                onVerifyAllPersonsChanged={
+                    this.state.persons.length > 1 ? verifyAllPersons => this.setState({ verifyAllPersons }) : undefined
+                }
+                title={
+                    <div>
+                        {this.state.persons.length > 1 && this.state.verifyAllPersons
+                            ? I18n.t('Verify between all persons')
+                            : I18n.t('Verify person')}
+                        {this.state.persons.length > 1 && this.state.verifyAllPersons ? null : (
+                            <span style={{ fontWeight: 'bold', marginLeft: 8 }}>
+                                {this.state.persons[this.state.showVerifyDialog].id}
+                                {this.state.persons[this.state.showVerifyDialog].name
+                                    ? ` (${this.state.persons[this.state.showVerifyDialog].name})`
+                                    : ''}
+                            </span>
+                        )}
+                    </div>
+                }
+                onClose={async (images?: string[]): Promise<void> => {
+                    if (images) {
+                        if (await this.validateTokens()) {
+                            await this.setStateAsync({ processing: true });
+                            try {
+                                const result = await Comm.verify(
+                                    this.state.accessToken,
+                                    this.props.native.engine || 'iobroker',
+                                    images,
+                                    this.state.verifyAllPersons && this.state.persons.length > 1
+                                        ? undefined
+                                        : this.state.persons[this.state.showVerifyDialog as number].id,
+                                );
+                                if (result.person === this.state.persons[this.state.showVerifyDialog as number].id) {
+                                    if (result.stats) {
                                         this.setState({
-                                            verifyResult: false,
-                                            detailedError: result,
+                                            verifyResult: result.person,
+                                            detailedError: null,
                                             stats: result.stats,
                                         });
                                     } else {
-                                        this.setState({ verifyResult: false, detailedError: result });
+                                        this.setState({ verifyResult: result.person, detailedError: null });
                                     }
-                                } catch (e) {
-                                    this.props.showToast(`${I18n.t('Cannot verify')}: ${e.toString()}`);
+                                } else if (result.stats) {
+                                    this.setState({
+                                        verifyResult: false,
+                                        detailedError: result,
+                                        stats: result.stats,
+                                    });
+                                } else {
+                                    this.setState({ verifyResult: false, detailedError: result });
                                 }
-                                this.setState({ processing: false });
-                            } else {
-                                this.props.showToast(`${I18n.t('Cannot get access token')}`);
+                            } catch (e) {
+                                this.props.showToast(`${I18n.t('Cannot verify')}: ${e.toString()}`);
                             }
-                        }}
-                        startIcon={this.state.processing ? <CircularProgress size={20} /> : <QuestionMark />}
-                    >
-                        {I18n.t('Verify')}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        disabled={this.state.processing}
-                        color="grey"
-                        onClick={() => this.setState({ showVerifyDialog: null })}
-                        startIcon={<Close />}
-                    >
-                        {I18n.t('Close')}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                            this.setState({ processing: false });
+                        } else {
+                            this.props.showToast(`${I18n.t('Cannot get access token')}`);
+                        }
+                    } else {
+                        this.setState({ showVerifyDialog: null });
+                    }
+                }}
+            />
         );
     }
 
@@ -770,7 +712,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                             size="small"
                             title={I18n.t('Test')}
                             disabled={!this.state.accessToken}
-                            onClick={() => this.setState({ showVerifyDialog: index, images: [] })}
+                            onClick={() => this.setState({ showVerifyDialog: index })}
                         >
                             <QuestionMark />
                         </IconButton>
@@ -782,7 +724,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                         style={{ opacity: this.state.persons[index][this.props.native.engine] ? 0.5 : 1 }}
                         title={I18n.t('Enroll person')}
                         disabled={!this.state.accessToken}
-                        onClick={() => this.setState({ showEnrollDialog: index, images: [] })}
+                        onClick={() => this.setState({ showEnrollDialog: index })}
                     >
                         <Person />
                     </IconButton>

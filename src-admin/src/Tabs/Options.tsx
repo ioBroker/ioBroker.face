@@ -43,7 +43,7 @@ interface OptionsProps {
     native: FaceAdapterConfig;
     common: ioBroker.InstanceCommon;
     instance: number;
-    onChange: (attr: string, value: boolean | string) => void;
+    onChange: (attr: string, value: boolean | string, cb?: () => void) => void;
     showToast: (text: string) => void;
     onLoad: (native: Record<string, any>) => void;
 }
@@ -216,9 +216,10 @@ class Options extends Component<OptionsProps, OptionsState> {
                                     this.props.native.login !== this.state.iotLogin ||
                                     this.props.native.password !== this.state.iotPassword
                                 ) {
-                                    this.props.onChange('login', this.state.iotLogin);
-                                    this.props.onChange('password', this.state.iotPassword);
-                                    void this.clearTokens();
+                                    this.props.onChange('login', this.state.iotLogin, () => {
+                                        this.props.onChange('password', this.state.iotPassword);
+                                        void this.clearTokens();
+                                    });
                                 }
                             }}
                         >

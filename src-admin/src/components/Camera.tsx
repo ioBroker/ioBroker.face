@@ -110,7 +110,7 @@ export class Camera extends React.Component<CameraProps, CameraState> {
 
     drawOverlayOnCanvas(): void {
         if (this.refInnerCanvas.current) {
-            // Fill th canvas with white and draw a circle in the middle with 80% of the width
+            // Fill the canvas with white and draw a circle in the middle with 80% of the width
             this.refInnerCanvas.current.width = this.refInnerCanvas.current.clientWidth;
             this.refInnerCanvas.current.height = this.refInnerCanvas.current.clientHeight;
             const context = this.refInnerCanvas.current.getContext('2d');
@@ -365,21 +365,22 @@ export class Camera extends React.Component<CameraProps, CameraState> {
     takeSnapshot(box: { x: number; y: number; height: number; width: number }): number {
         if (this.refVideo.current && this.context2 && this.refCanvas.current) {
             const images = [...this.state.images];
-            this.refCanvas.current.height = this.refVideo.current.clientHeight;
-            this.refCanvas.current.width = Math.round((this.refVideo.current.clientHeight * 480) / 640);
-
-            // We need portrait
+            this.refCanvas.current.height = this.refVideo.current.videoHeight;
+            this.refCanvas.current.width = Math.round((this.refVideo.current.videoHeight * 480) / 640);
+            const width = Math.floor(box.x + box.width / 2 - this.refCanvas.current.width / 2);
+            // We need a portrait mode
             this.context2.drawImage(
-                this.refVideo.current,
-                Math.floor(box.x + (box.width - this.refCanvas.current.width) / 2),
-                0,
-                this.refCanvas.current.width,
-                this.refVideo.current.clientHeight,
-                0,
-                0,
-                this.refCanvas.current.width,
-                this.refVideo.current.clientHeight,
+                this.refVideo.current, // source
+                width, // Source x
+                0, // Source Y
+                this.refCanvas.current.width, // Source width
+                this.refCanvas.current.height, // source height
+                0, // Destination x
+                0, // Destination y
+                this.refCanvas.current.width, // Destination width
+                this.refCanvas.current.height, // Destination height
             );
+
             images.push(this.refCanvas.current.toDataURL('image/jpeg'));
             if (images.length > 4) {
                 images.splice(0, images.length - 4);
@@ -486,17 +487,21 @@ export class Camera extends React.Component<CameraProps, CameraState> {
                                 opacity: 0.8,
                             }}
                         ></canvas>
-                        {this.state.takingSnapshots && this.state.images.length ? <div
-                            style={{
-                                color: '#000080',
-                                position: 'absolute',
-                                top: 3,
-                                left: 0,
-                                textAlign: 'center',
-                                width: '100%',
-                                opacity: 0.8,
-                            }}
-                        >{I18n.t('Turn your head slightly')}</div> : null}
+                        {this.state.takingSnapshots && this.state.images.length ? (
+                            <div
+                                style={{
+                                    color: '#000080',
+                                    position: 'absolute',
+                                    top: 3,
+                                    left: 0,
+                                    textAlign: 'center',
+                                    width: '100%',
+                                    opacity: 0.8,
+                                }}
+                            >
+                                {I18n.t('Turn your head slightly')}
+                            </div>
+                        ) : null}
                     </div>
                     <div ref={this.refInstructions}></div>
                 </div>
