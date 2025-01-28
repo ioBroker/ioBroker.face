@@ -57,7 +57,7 @@ The following values could be in `face.X.images.uploadResult`:
 
 ## Todo
 - [ ] Check in backend if some person is found on the image and if not do not send the image to the cloud.
-- [ ] Add an option to check the images in backend before sending to the cloud (in the configuration).
+- [ ] Add an option to check the images in the backend before sending to the cloud (in the configuration).
 
 <!--
 	Placeholder for the next version (at the beginning of the line):
