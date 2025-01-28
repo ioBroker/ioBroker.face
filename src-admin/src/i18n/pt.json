@@ -1,5 +1,6 @@
 {
     "Add": "Adicionar",
+    "Add new household person": "Adicionar nova pessoa da família",
     "Advanced": "Avançado",
     "Apply": "Aplicar",
     "Cancel": "Cancelar",
@@ -46,6 +47,7 @@
     "Read from cloud again": "Ler da nuvem novamente",
     "Screenshot": "Captura de tela",
     "Sync credentials with %s": "Sincronizar credenciais com %s",
+    "Take photos with the ioBroker cloud": "Tire fotos com a nuvem ioBroker",
     "Test": "Teste",
     "The result is": "O resultado é",
     "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.": "Para usar a detecção facial, insira credenciais válidas do ioBroker.pro Cloud com pelo menos uma licença de Assistente ativa.",
@@ -55,6 +57,7 @@
     "Verify person": "Verificar pessoa",
     "default": "padrão",
     "invalid_password_warning": "A senha pode ser inválida",
+    "ioBroker received \"%s\" images. You can now close this window": "ioBroker recebeu \"%s\" imagens. Agora você pode fechar esta janela",
     "ioBroker.pro Login": "Entrar no ioBroker.pro",
     "ioBroker.pro Password": "Senha ioBroker.pro",
     "no login or password defined": "nenhum login ou senha definidos"

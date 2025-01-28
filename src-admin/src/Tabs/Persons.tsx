@@ -23,7 +23,6 @@ import { Check, Close, Delete, Person, Add, Edit, QuestionMark, Refresh } from '
 import { type AdminConnection, I18n, type ThemeType } from '@iobroker/adapter-react-v5';
 
 import type { ENGINE, FaceAdapterConfig, PERSON_ID, TOKEN } from '../types';
-import { Camera } from '../components/Camera';
 import { Comm, type STATISTICS } from '../components/Comm';
 import ScanDialog from '../components/ScanDialog';
 
@@ -297,6 +296,7 @@ class Persons extends Component<PersonsProps, PersonsState> {
                 onVerifyAllPersonsChanged={
                     this.state.persons.length > 1 ? verifyAllPersons => this.setState({ verifyAllPersons }) : undefined
                 }
+                buttonText={I18n.t('Verify')}
                 title={
                     <div>
                         {this.state.persons.length > 1 && this.state.verifyAllPersons

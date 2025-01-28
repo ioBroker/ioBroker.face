@@ -1,5 +1,6 @@
 {
     "Add": "Add",
+    "Add new household person": "Add new household person",
     "Advanced": "Advanced",
     "Apply": "Apply",
     "Cancel": "Cancel",
@@ -46,6 +47,7 @@
     "Read from cloud again": "Read from cloud again",
     "Screenshot": "Screenshot",
     "Sync credentials with %s": "Sync credentials with %s",
+    "Take photos with the ioBroker cloud": "Take photos with the ioBroker cloud",
     "Test": "Test",
     "The result is": "The result is",
     "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.": "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.",
@@ -55,6 +57,7 @@
     "Verify person": "Verify person",
     "default": "default",
     "invalid_password_warning": "Password could be invalid",
+    "ioBroker received \"%s\" images. You can now close this window": "ioBroker received \"%s\" images. You can now close this window",
     "ioBroker.pro Login": "ioBroker.pro Login",
     "ioBroker.pro Password": "ioBroker.pro Password",
     "no login or password defined": "no login or password defined"

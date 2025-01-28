@@ -1,5 +1,6 @@
 {
     "Add": "Toevoegen",
+    "Add new household person": "Voeg een nieuwe huishoudpersoon toe",
     "Advanced": "Geavanceerd",
     "Apply": "Toepassen",
     "Cancel": "Annuleren",
@@ -46,6 +47,7 @@
     "Read from cloud again": "Lees opnieuw vanuit de cloud",
     "Screenshot": "Schermafbeelding",
     "Sync credentials with %s": "Synchroniseer referenties met %s",
+    "Take photos with the ioBroker cloud": "Maak foto's met de ioBroker-cloud",
     "Test": "Test",
     "The result is": "Het resultaat is",
     "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.": "Om gezichtsdetectie te gebruiken, moet u geldige ioBroker.pro Cloud-inloggegevens invoeren met minimaal een actieve Assistent-licentie.",
@@ -55,6 +57,7 @@
     "Verify person": "Persoon verifiëren",
     "default": "standaard",
     "invalid_password_warning": "Wachtwoord kan ongeldig zijn",
+    "ioBroker received \"%s\" images. You can now close this window": "ioBroker ontving \"%s\" afbeeldingen. U kunt dit venster nu sluiten",
     "ioBroker.pro Login": "ioBroker.pro Inloggen",
     "ioBroker.pro Password": "ioBroker.pro-wachtwoord",
     "no login or password defined": "geen login of wachtwoord gedefinieerd"

@@ -58,7 +58,7 @@ export default class ScanDialog extends Component<ScanDialogProps, ScanDialogSta
 
     onMessage = (event: { origin: string; data: any }): void => {
         if (typeof event.data === 'string') {
-            if (event.origin === 'https://qr-code.iobroker.in') {
+            if (event.origin === 'https://camera.iobroker.in') {
                 if (event.data === 'inited') {
                     if (this.initInterval) {
                         clearInterval(this.initInterval);
@@ -71,7 +71,11 @@ export default class ScanDialog extends Component<ScanDialogProps, ScanDialogSta
                     try {
                         const images: string[] = JSON.parse(event.data);
 
-                        this.setState({ images });
+                        this.setState({ images }, () => {
+                            if (this.state.images.length >= this.props.numberOfSnapshots) {
+                                this.props.onClose(this.state.images);
+                            }
+                        });
                         if (images.length >= this.props.numberOfSnapshots) {
                             this.state.iframe?.postMessage(
                                 `close:${I18n.t('ioBroker received "%s" images. You can now close this window', images.length)}`,
@@ -181,9 +185,10 @@ export default class ScanDialog extends Component<ScanDialogProps, ScanDialogSta
                             <Button
                                 style={{ marginTop: 16 }}
                                 variant="contained"
+                                disabled={this.props.processing}
                                 onClick={() => {
                                     const iframe = window.open(
-                                        `https://qr-code.iobroker.in/face/index.html?theme=${this.props.themeType}&snapshots=${this.props.numberOfSnapshots}&text=${encodeURIComponent(this.props.buttonText || I18n.t('Enroll'))}`,
+                                        `https://camera.iobroker.in/?theme=${this.props.themeType}&snapshots=${this.props.numberOfSnapshots}&lang=${I18n.getLanguage()}&text=${encodeURIComponent(this.props.buttonText || I18n.t('Enroll'))}`,
                                         '_blank',
                                     );
                                     this.setState({ iframe }, () => {

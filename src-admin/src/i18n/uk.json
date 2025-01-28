@@ -1,5 +1,6 @@
 {
     "Add": "додати",
+    "Add new household person": "Додати нового домогосподарства",
     "Advanced": "Просунутий",
     "Apply": "Застосувати",
     "Cancel": "Скасувати",
@@ -46,6 +47,7 @@
     "Read from cloud again": "Прочитати з хмари ще раз",
     "Screenshot": "Скріншот",
     "Sync credentials with %s": "Синхронізувати облікові дані з %s",
+    "Take photos with the ioBroker cloud": "Робіть фотографії за допомогою хмари ioBroker",
     "Test": "Тест",
     "The result is": "Результат є",
     "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.": "Щоб використовувати розпізнавання обличчя, введіть дійсні облікові дані ioBroker.pro Cloud із принаймні активною ліцензією Асистента.",
@@ -55,6 +57,7 @@
     "Verify person": "Підтвердити особу",
     "default": "за замовчуванням",
     "invalid_password_warning": "Пароль може бути недійсним",
+    "ioBroker received \"%s\" images. You can now close this window": "ioBroker отримав зображення \"%s\". Тепер ви можете закрити це вікно",
     "ioBroker.pro Login": "ioBroker.pro Логін",
     "ioBroker.pro Password": "Пароль ioBroker.pro",
     "no login or password defined": "не визначено логін або пароль"

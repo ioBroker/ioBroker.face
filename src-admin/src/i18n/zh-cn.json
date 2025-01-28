@@ -1,5 +1,6 @@
 {
     "Add": "添加",
+    "Add new household person": "添加新家庭成员",
     "Advanced": "先进的",
     "Apply": "申请",
     "Cancel": "取消",
@@ -46,6 +47,7 @@
     "Read from cloud again": "再次从云端读取",
     "Screenshot": "截屏",
     "Sync credentials with %s": "与 %s 同步凭证",
+    "Take photos with the ioBroker cloud": "使用 ioBroker 云拍照",
     "Test": "测试",
     "The result is": "结果是",
     "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.": "要使用人脸检测，请输入有效的 ioBroker.pro 云凭证以及至少有效的助手许可证。",
@@ -55,6 +57,7 @@
     "Verify person": "核实人员",
     "default": "默认",
     "invalid_password_warning": "密码可能无效",
+    "ioBroker received \"%s\" images. You can now close this window": "ioBroker 已收到“%s”张图片。您现在可以关闭此窗口",
     "ioBroker.pro Login": "ioBroker.pro 登录",
     "ioBroker.pro Password": "ioBroker.pro 密码",
     "no login or password defined": "未定义登录名或密码"

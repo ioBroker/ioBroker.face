@@ -1,5 +1,6 @@
 {
     "Add": "Добавлять",
+    "Add new household person": "Добавить нового члена семьи",
     "Advanced": "Передовой",
     "Apply": "Применять",
     "Cancel": "Отмена",
@@ -46,6 +47,7 @@
     "Read from cloud again": "Снова читать из облака",
     "Screenshot": "Скриншот",
     "Sync credentials with %s": "Синхронизировать учетные данные с %s",
+    "Take photos with the ioBroker cloud": "Делайте фотографии с помощью облака ioBroker",
     "Test": "Тест",
     "The result is": "Результатом является",
     "To use a Face detection please enter valid ioBroker.pro Cloud credentials with at least an active Assistant license.": "Чтобы использовать функцию распознавания лиц, введите действительные учетные данные ioBroker.pro Cloud с как минимум активной лицензией Assistant.",
@@ -55,6 +57,7 @@
     "Verify person": "Проверить человека",
     "default": "по умолчанию",
     "invalid_password_warning": "Пароль может быть недействительным",
+    "ioBroker received \"%s\" images. You can now close this window": "ioBroker получил \"%s\" изображений. Теперь вы можете закрыть это окно",
     "ioBroker.pro Login": "ioBroker.pro Войти",
     "ioBroker.pro Password": "Пароль ioBroker.pro",
     "no login or password defined": "не определен логин или пароль"
