@@ -65,7 +65,7 @@ The following values could be in `face.X.images.uploadResult`:
 -->
 
 ## Changelog
-### 0.0.3 (2025-01-28)
+### **WORK IN PROGRESS**
 * (@GermanBluefox) Added possibility to take pictures via cloud
 
 ### 0.0.2 (2025-01-01)
