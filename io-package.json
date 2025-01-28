@@ -1,8 +1,21 @@
 {
   "common": {
     "name": "face",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "news": {
+      "0.0.4": {
+        "en": "Added possibility to take pictures via cloud",
+        "de": "Möglichkeit, Bilder über Cloud zu machen",
+        "ru": "Добавлена возможность делать снимки через облако",
+        "pt": "Adicionado possibilidade de tirar fotos via nuvem",
+        "nl": "Toegevoegde mogelijkheid om foto's te maken via cloud",
+        "fr": "Possibilité de prendre des photos via le cloud",
+        "it": "Aggiunta possibilità di scattare foto via cloud",
+        "es": "Posibilidad de tomar fotos a través de la nube",
+        "pl": "Dodano możliwość robienia zdjęć przez chmurę",
+        "uk": "Додана можливість фотографії через хмару",
+        "zh-cn": "增加通过云拍照的可能性"
+      },
       "0.0.3": {
         "en": "Added possibility to take pictures via cloud",
         "de": "Möglichkeit, Bilder über Cloud zu machen",
