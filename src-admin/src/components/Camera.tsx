@@ -108,6 +108,7 @@ export class Camera extends React.Component<CameraProps, CameraState> {
         return uniqueDevices;
     }
 
+    /*
     drawOverlayOnCanvas(): void {
         if (this.refInnerCanvas.current) {
             // Fill the canvas with white and draw a circle in the middle with 80% of the width
@@ -130,6 +131,7 @@ export class Camera extends React.Component<CameraProps, CameraState> {
             }
         }
     }
+     */
 
     static getAngle(detections: { detection: FaceDetection; landmarks: FaceLandmarks68 }): [0 | 1 | -1, number] {
         const eyeRight = getMeanPosition(detections.landmarks.getRightEye());
