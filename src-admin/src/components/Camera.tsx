@@ -47,7 +47,6 @@ export class Camera extends React.Component<CameraProps, CameraState> {
     private readonly refCanvas: React.RefObject<HTMLCanvasElement>;
     private readonly refOverlay: React.RefObject<HTMLDivElement>;
     private readonly refOverlayFrame: React.RefObject<HTMLDivElement>;
-    private readonly refInnerCanvas: React.RefObject<HTMLCanvasElement>;
     private readonly refResultsCanvas: React.RefObject<HTMLCanvasElement>;
     private readonly refInstructions: React.RefObject<HTMLDivElement>;
     private context2: CanvasRenderingContext2D | null = null;
@@ -62,7 +61,6 @@ export class Camera extends React.Component<CameraProps, CameraState> {
         this.refCanvas = React.createRef();
         this.refOverlay = React.createRef();
         this.refOverlayFrame = React.createRef();
-        this.refInnerCanvas = React.createRef();
         this.refResultsCanvas = React.createRef();
         this.refInstructions = React.createRef();
         this.state = {
